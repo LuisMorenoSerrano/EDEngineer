@@ -28,14 +28,13 @@ namespace EDEngineer.Views
         public BlueprintFilters Filters { get; private set; }
         public ObservableCollection<Entry> HighlightedEntryData { get; } = new ObservableCollection<Entry>();
 
-        public ShoppingListViewModel ShoppingList => shoppingList;
+        public ShoppingListViewModel ShoppingList { get; private set; }
 
         private readonly JournalEntryConverter journalEntryConverter;
         public JsonSerializerSettings JsonSettings { get; }
 
         private readonly HashSet<Blueprint> favoritedBlueprints = new HashSet<Blueprint>();
         private Instant lastUpdate = Instant.MinValue;
-        private ShoppingListViewModel shoppingList;
         private readonly CommanderNotifications commanderNotifications;
 
         public Instant LastUpdate
@@ -49,7 +48,7 @@ namespace EDEngineer.Views
                 OnPropertyChanged();
             }
         }
-        
+
         public event PropertyChangedEventHandler PropertyChanged;
         [NotifyPropertyChangedInvocator]
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -62,7 +61,7 @@ namespace EDEngineer.Views
             commanderNotifications?.UnsubscribeNotifications();
             State.Cargo.InitLoad();
             // Clear state:
-            
+
             State.Cargo.Ingredients.ToList().ForEach(k => State.Cargo.IncrementCargo(k.Value.Data.Name, -1 * k.Value.Count));
             LastUpdate = Instant.MinValue;
 
@@ -321,7 +320,7 @@ namespace EDEngineer.Views
 
             Filters = new BlueprintFilters(languages, State.Blueprints);
 
-            shoppingList = new ShoppingListViewModel(State.Cargo, State.Blueprints, languages);
+            ShoppingList = new ShoppingListViewModel(State.Cargo, State.Blueprints, languages);
         }
 
         public void TryRemoveFromShoppingListByIngredients(BlueprintCategory category, string technicalModuleName, List<BlueprintIngredient> blueprintIngredients)
@@ -406,6 +405,76 @@ namespace EDEngineer.Views
             }
         }
 
+        public void ImportShoppingList()
+        {
+            if (Helpers.TryRetrieveShoppingList(out var shoppingListItems))
+            {
+                var blueprints = State.Blueprints;
+
+                if (shoppingListItems != null && shoppingListItems.Count > 0)
+                {
+                    // Configure the message box to be displayed
+                    var messageBoxText = "Do you want to clear the shopping list before import?";
+                    var caption = "Shopping List Import";
+                    var button = MessageBoxButton.YesNoCancel;
+                    var icon = MessageBoxImage.Warning;
+
+                    // Display message box
+                    var result = MessageBox.Show(messageBoxText, caption, button, icon);
+
+                    // Process message box results
+                    switch (result)
+                    {
+                        case MessageBoxResult.Yes:
+                            ClearShoppingList();
+                            break;
+                        case MessageBoxResult.No:
+                            // User pressed No, so just load into shopping list without clearing
+                            break;
+                        case MessageBoxResult.Cancel:
+                            // User pressed Cancel button so skip out of Import
+                            return;
+                    }
+
+                    LoadShoppingListItems(shoppingListItems, blueprints);
+                    Settings.Default.Save();
+                }
+
+                RefreshShoppingList();
+
+            }
+        }
+
+        private void LoadShoppingListItems(StringCollection shoppingListItems, List<Blueprint> blueprints)
+        {
+            var blueprintsByString = blueprints.ToDictionary(b => b.ToString(), b => b);
+            foreach (var item in shoppingListItems)
+            {
+                if (item == null)
+                {
+                    continue;
+                }
+
+                var itemName = item.Split(':');
+                if (blueprintsByString.TryGetValue(itemName[1], out var blueprint))
+                {
+                    ShoppingListChange(blueprint, 1);
+                }
+            }
+        }
+
+        public void ExportShoppingList()
+        {
+            try
+            {
+                Helpers.SaveShoppingList();
+            }
+            catch
+            {
+                MessageBox.Show("Shopping list could not be saved.");
+            }
+        }
+
         public void ClearShoppingList()
         {
             foreach (var tuple in ShoppingList.Composition.ToList())
@@ -464,7 +533,7 @@ namespace EDEngineer.Views
 
         public void HighlightShoppingListBlueprint(List<Tuple<Blueprint, int>> blueprints, BlueprintIngredient ingredient, bool highlighted)
         {
-            foreach(var blueprint in blueprints.Select(i => i.Item1).Where(b => b.Ingredients.Any(i => i.Entry.Data.Name == ingredient.Entry.Data.Name)))
+            foreach (var blueprint in blueprints.Select(i => i.Item1).Where(b => b.Ingredients.Any(i => i.Entry.Data.Name == ingredient.Entry.Data.Name)))
             {
                 blueprint.ShoppingListHighlighted = highlighted;
             }
@@ -477,6 +546,13 @@ namespace EDEngineer.Views
             // relevant when live reloading a commander, because WPF didn't bind upon creating the object:
             OnPropertyChanged(nameof(ShoppingList));
             OnPropertyChanged(nameof(ShoppingListItem));
+        }
+
+        public void RefreshShoppingList( StringCollection shoppingList)
+        {
+            var blueprints = State.Blueprints;
+            LoadShoppingListItems(shoppingList, blueprints);
+            Settings.Default.Save();
         }
 
         public void ShowAllGradeChanges(ShoppingListBlock shoppingListBlock)

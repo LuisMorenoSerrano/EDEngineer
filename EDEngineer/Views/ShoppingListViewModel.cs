@@ -45,6 +45,7 @@ namespace EDEngineer.Views
         }
 
         public List<Blueprint> List => this.ToList();
+        public ILanguage Languages => this.languages;
 
         public List<Tuple<Blueprint, int>> Composition
             => blueprints.SelectMany(b => b).Where(b => b.ShoppingListCount > 0)
@@ -171,7 +172,7 @@ namespace EDEngineer.Views
                 // if no complete line could be made, find the biggest remaining element and swap with current one:
                 if (!found && i < list.Count - 1)
                 {
-                    int max = i + 1;
+                    var max = i + 1;
                     for (var j = i + 1; j < list.Count; j++)
                     {
                         if (list[max].Composition.Count < list[j].Composition.Count)

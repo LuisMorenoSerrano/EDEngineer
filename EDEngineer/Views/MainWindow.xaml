@@ -73,7 +73,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                             <TextBlock Grid.Row="5"
-                                       Visibility="{Binding Kind, Converter={StaticResource CommodityKindToCollapsed}}">
+                                       Visibility="{Binding DataContext.Value.Data.Kind, Converter={StaticResource CommodityKindToCollapsed}}">
                                 <Run Text="{Binding Tag.Languages.CurrentLanguage, Converter={x:Static localization:Languages.Instance}, ConverterParameter='Carrying '}"></Run>
                                 <Run Text="{Binding DataContext.Value.Count}"/>
                                 <Run Text="/"/>
@@ -199,6 +199,7 @@
                                          VerticalAlignment="Center"
                                          BorderBrush="Transparent"
                                          FontSize="15"
+
                                          GotFocus="EntryCountTextBoxOnFocussed"
                                          LostFocus="EntryCountTextBoxOnLostFocus"
                                          PreviewTextInput="EntryCountTextBoxOnPreviewTextInput"
@@ -1362,13 +1363,31 @@
                     </DataGrid>
 
                     <!-- SPLITTER -->
-                    <GridSplitter Height="3"
+                    <GridSplitter Height="5"
                                   Grid.Row="1"
                                   Background="DarkRed"
                                   x:Name="ShoppingListSplitter"
                                   HorizontalAlignment="Stretch"
                                   MouseDoubleClick="ShoppingListSplitterDoubleClicked"
-                                  Visibility="{Binding ShoppingList.List, Converter={StaticResource ListToVisibility}}" />
+                                  Visibility="{Binding ShoppingList.List, Converter={StaticResource ListToVisibility}}">
+                        <GridSplitter.ToolTip>
+                            <TextBlock Text="double click to reset" />
+                        </GridSplitter.ToolTip>
+                    </GridSplitter>
+
+                    <Border Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            Background="Black"
+                            IsHitTestVisible="False"
+                            Visibility="{Binding ShoppingList.List, Converter={StaticResource ListToVisibility}}">
+                        <Label Content="drag ↕ me"
+                               Foreground="DarkRed"
+                               HorizontalAlignment="Center"
+                               FontSize="15"
+                               FontFamily="/Resources/Fonts/#Euro Caps"
+                               FontWeight="Bold"
+                               IsHitTestVisible="False"/>
+                    </Border>
 
                     <!-- SHOPPING LIST -->
                     <ScrollViewer Grid.Row="2"
@@ -1866,6 +1885,8 @@
                                                     <ColumnDefinition Width="50"/>
                                                     <ColumnDefinition Width="50"/>
                                                     <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="1"
                                                        VerticalAlignment="Center">
@@ -1908,11 +1929,38 @@
                                                               HorizontalAlignment="Center"/>
                                                 </StackPanel>
 
+                                                <Button Click="ImportShoppingList"
+                                                        FontWeight="Black"
+                                                        FontSize="22"
+                                                        VerticalAlignment="Center"
+                                                        VerticalContentAlignment="Center"
+                                                        Foreground="Blue"
+                                                        Grid.Row="0"
+                                                        Style="{DynamicResource ChromelessButtonStyle}"
+                                                        Grid.Column="4"
+                                                        Margin="5,0,5,0"
+                                                        ToolTip="{Binding DataContext.Languages.CurrentLanguage, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Converter={x:Static localization:Languages.Instance}, ConverterParameter='Import from file'}">
+                                                    <iconPacks:PackIconMaterial Kind="FileImport" />
+                                                </Button>
+
+                                                <Button Click="ExportShoppingList"
+                                                        FontWeight="Black"
+                                                        FontSize="22"
+                                                        VerticalAlignment="Center"
+                                                        VerticalContentAlignment="Center"
+                                                        Foreground="Blue"
+                                                        Grid.Row="0"
+                                                        Style="{DynamicResource ChromelessButtonStyle}"
+                                                        Grid.Column="5"
+                                                        Margin="5,0,5,0"
+                                                        ToolTip="{Binding DataContext.Languages.CurrentLanguage, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Converter={x:Static localization:Languages.Instance}, ConverterParameter='Save to file'}">
+                                                    <iconPacks:PackIconMaterial Kind="ContentSave"/>
+                                                </Button>
 
                                                 <Button HorizontalAlignment="Stretch"
                                                         FontSize="16"
                                                         FontFamily="/Resources/Fonts/#Euro Caps"
-                                                        Grid.Column="4"
+                                                        Grid.Column="6"
                                                         x:Name="PrintShoppingListButton"
                                                         Style="{DynamicResource ChromelessButtonStyle}"
                                                         Foreground="Black"
@@ -1920,18 +1968,18 @@
                                                     <iconPacks:PackIconMaterial Kind="Printer" />
                                                 </Button>
 
-
                                                 <Button HorizontalAlignment="Stretch"
                                                         FontSize="16"
                                                         FontFamily="/Resources/Fonts/#Euro Caps"
-                                                        Grid.Column="5"
+                                                        Grid.Column="7"
                                                         x:Name="ClearShoppingListButton"
                                                         Style="{DynamicResource ChromelessButtonStyle}"
                                                         Foreground="Red"
                                                         Click="ClearShoppingListButtonClicked"
-                                                        ToolTip="{Binding Languages.CurrentLanguage, Converter={x:Static localization:Languages.Instance}, ConverterParameter='Clear'}">
+                                                        ToolTip="{Binding DataContext.Languages.CurrentLanguage, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Converter={x:Static localization:Languages.Instance}, ConverterParameter='Clear'}">
                                                     <iconPacks:PackIconMaterial Kind="Delete" />
                                                 </Button>
+                                                
                                             </Grid>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
